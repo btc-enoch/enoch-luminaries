@@ -1,0 +1,20 @@
+# Go
+/bin/
+*.test
+*.out
+
+# Node / web build artifacts (Phase 1)
+web/node_modules/
+web/dist/
+web/.next/
+
+# Terraform (Phase 2)
+deploy/.terraform/
+*.tfstate
+*.tfstate.*
+deploy/*.tfvars
+
+# Local / editor
+.local/
+.DS_Store
+.idea/
