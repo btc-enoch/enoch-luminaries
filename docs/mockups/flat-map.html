@@ -1,0 +1,187 @@
+<!doctype html>
+<!--
+  enoch-luminaries — "the Orrery": FLAT MAP mockup (option B)
+  Static design mock. Not wired to real data — illustrative of the Phase-2
+  geo-distributed testnet. Stack shown: deck.gl ArcLayer + a dark basemap is
+  what we'd use; here we render the same idea with d3-geo + world-atlas so the
+  file is self-contained (no map-tile keys), for a faithful preview of the look.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the Orrery — flat map</title>
+<script src="https://unpkg.com/d3@7"></script>
+<script src="https://unpkg.com/topojson-client@3"></script>
+<style>
+  :root{
+    --bg:#070b13; --panel:rgba(12,18,30,.74); --line:rgba(90,130,180,.22);
+    --txt:#cfe0f5; --muted:#7e93ad; --cyan:#35d2e0; --amber:#f2b34b;
+    --violet:#a583ff; --green:#54d98c; --red:#ff5c6c;
+    --font:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:
+    radial-gradient(1200px 700px at 50% -10%, #0d1626 0%, var(--bg) 60%);
+    overflow:hidden;font-family:var(--font);color:var(--txt)}
+  #map{position:absolute;inset:0}
+  .land{fill:#0f1b2d;stroke:#22364f;stroke-width:.5}
+  .graticule{fill:none;stroke:rgba(90,130,180,.08);stroke-width:.5}
+  .sphere{fill:#0a1220;stroke:rgba(90,130,180,.18);stroke-width:1}
+  .arc{fill:none;stroke-width:1.6;stroke-linecap:round;
+    stroke-dasharray:6 11;animation:flow 1.3s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-34}}
+  .node{stroke:#06121a;stroke-width:1}
+  .pulse{fill:none;animation:pulse 1.8s ease-out infinite}
+  @keyframes pulse{from{r:5;opacity:.8}to{r:24;opacity:0}}
+  .overlay{position:absolute;inset:0;pointer-events:none}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    backdrop-filter:blur(8px);padding:10px 14px}
+  .topbar{position:absolute;top:16px;left:16px;right:16px;display:flex;
+    justify-content:space-between;align-items:center;gap:12px}
+  .brand{font-weight:600;letter-spacing:.5px}
+  .brand .dim{color:var(--muted);font-weight:400}
+  .metrics{display:flex;gap:22px;font-size:12.5px}
+  .metrics b{color:#fff;font-weight:600}.metrics .k{color:var(--muted);margin-right:6px}
+  .live{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+  .live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 10px var(--green);animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.35}}
+  .inspector{position:absolute;top:74px;right:16px;width:248px;font-size:12px}
+  .inspector h3{margin:0 0 8px;font-size:12px;letter-spacing:.4px;color:#fff}
+  .inspector .row{display:flex;justify-content:space-between;margin:5px 0;color:var(--muted)}
+  .inspector .row span{color:var(--txt)}
+  .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;border:1px solid var(--line)}
+  .tag.leader{color:#06121a;background:var(--cyan);border-color:var(--cyan)}
+  .tag.healthy{color:var(--green);border-color:rgba(84,217,140,.4)}
+  .legend{position:absolute;left:16px;bottom:16px;font-size:11.5px;line-height:1.9}
+  .legend .grp{margin-bottom:8px}
+  .legend .ttl{color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-size:9.5px;margin-bottom:3px}
+  .legend i{display:inline-block;width:20px;height:0;border-top:2px solid;margin-right:8px;vertical-align:middle}
+  .legend .d{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .scenario{position:absolute;right:16px;bottom:16px;text-align:right;font-size:12px}
+  .scenario .now{color:#fff;font-size:13px}.scenario .sub{color:var(--muted);font-size:11px;margin-top:3px}
+  .tiertog{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;display:flex;font-size:11px;pointer-events:auto}
+  .tiertog button{font-family:var(--font);background:var(--panel);color:var(--muted);
+    border:1px solid var(--line);padding:6px 12px;cursor:pointer}
+  .tiertog button:first-child{border-radius:8px 0 0 8px}
+  .tiertog button:last-child{border-radius:0 8px 8px 0;border-left:0}
+  .tiertog button.on{color:#06121a;background:var(--cyan);border-color:var(--cyan)}
+</style>
+</head>
+<body>
+<svg id="map"></svg>
+<div class="overlay">
+  <div class="topbar">
+    <div class="brand chip">enoch&middot;luminaries <span class="dim">&nbsp;the Orrery</span></div>
+    <div class="metrics chip">
+      <div><span class="k">height</span><b>142,338</b></div>
+      <div><span class="k">leader</span><b>operator-2</b></div>
+      <div><span class="k">sealing</span><b>4/5</b></div>
+      <div><span class="k">anchor</span><b>2 blk ago</b></div>
+    </div>
+    <div class="live chip"><span class="dot"></span>live &middot; regtest&rarr;multi-region</div>
+  </div>
+  <div class="inspector chip">
+    <h3>operator-2 <span class="tag leader">LEADER</span></h3>
+    <div class="row">region <span>eu-central-1 · Frankfurt</span></div>
+    <div class="row">health <span class="tag healthy">healthy</span></div>
+    <div class="row">height <span>142,338</span></div>
+    <div class="row">bond <span>0.10000000 BTC</span></div>
+    <div class="row">last seal <span>1.2s ago</span></div>
+  </div>
+  <div class="legend chip">
+    <div class="grp"><div class="ttl">nodes</div>
+      <div><span class="d" style="background:var(--green);box-shadow:0 0 8px var(--green)"></span>operator · healthy</div>
+      <div><span class="d" style="background:var(--amber)"></span>operator · degraded</div>
+      <div><span class="d" style="background:var(--muted);width:7px;height:7px"></span>agent</div>
+    </div>
+    <div class="grp"><div class="ttl">messages</div>
+      <div><i style="border-color:var(--cyan)"></i>state-root sig</div>
+      <div><i style="border-color:var(--amber)"></i>FROST round</div>
+      <div><i style="border-color:var(--violet)"></i>deposit gossip</div>
+      <div><i style="border-color:var(--green)"></i>anchor → L1</div>
+    </div>
+  </div>
+  <div class="tiertog"><button class="on">Layer 1+2</button><button>+ flows</button></div>
+  <div class="scenario chip">
+    <div class="now" id="scNow">state-root seal · height 142,338</div>
+    <div class="sub" id="scSub">leader operator-2 → 4 peers · M-of-N quorum</div>
+  </div>
+</div>
+
+<script>
+const C={cyan:'#35d2e0',amber:'#f2b34b',violet:'#a583ff',green:'#54d98c',
+        healthy:'#54d98c',degraded:'#f2b34b',agent:'#9fb4cc'};
+const nodes=[
+  {id:'operator-0',role:'operator',region:'us-east-1',lat:38.95,lng:-77.45,live:'healthy'},
+  {id:'operator-1',role:'operator',region:'us-west-2',lat:45.87,lng:-119.69,live:'healthy'},
+  {id:'operator-2',role:'operator',region:'eu-central-1',lat:50.11,lng:8.68,live:'healthy',leader:true},
+  {id:'operator-3',role:'operator',region:'ap-southeast-1',lat:1.35,lng:103.82,live:'degraded'},
+  {id:'operator-4',role:'operator',region:'sa-east-1',lat:-23.55,lng:-46.63,live:'healthy'},
+  {id:'agent-0',role:'agent',region:'us-east-1',lat:39.6,lng:-75.9,live:'healthy'},
+  {id:'agent-1',role:'agent',region:'eu-central-1',lat:48.4,lng:11.2,live:'healthy'},
+  {id:'agent-2',role:'agent',region:'ap-southeast-1',lat:3.1,lng:101.6,live:'healthy'},
+];
+const byId=Object.fromEntries(nodes.map(n=>[n.id,n]));
+const ops=['operator-0','operator-1','operator-3','operator-4'];
+const scenarios=[
+  {now:'state-root seal · height 142,338',sub:'leader operator-2 → 4 peers · M-of-N quorum',
+   ring:['operator-2',...ops],arcs:ops.map(o=>['operator-2',o,C.cyan])},
+  {now:'FROST signing round',sub:'agents ↔ operators · withdrawal batch',
+   ring:['operator-2'],arcs:[['agent-1','operator-2',C.amber],['agent-0','operator-0',C.amber],['agent-2','operator-3',C.amber]]},
+  {now:'deposit gossip',sub:'operator-0 broadcasts a detected L1 deposit',
+   ring:['operator-0'],arcs:ops.filter(o=>o!=='operator-0').concat(['operator-2']).map(o=>['operator-0',o,C.violet])},
+  {now:'L1 anchor published',sub:'leader operator-2 commits state root to Bitcoin',
+   ring:['operator-2'],arcs:[],anchor:true},
+];
+
+const svg=d3.select('#map'), W=()=>innerWidth, H=()=>innerHeight;
+let proj,path,gMap,gArc,gNode,gPulse;
+function layout(){
+  svg.attr('width',W()).attr('height',H()); svg.selectAll('*').remove();
+  proj=d3.geoNaturalEarth1().fitExtent([[20,70],[W()-20,H()-40]],{type:'Sphere'});
+  path=d3.geoPath(proj);
+  gMap=svg.append('g'); gArc=svg.append('g'); gPulse=svg.append('g'); gNode=svg.append('g');
+  gMap.append('path').attr('class','sphere').attr('d',path({type:'Sphere'}));
+  gMap.append('path').attr('class','graticule').attr('d',path(d3.geoGraticule10()));
+}
+function P(id){const n=byId[id];return proj([n.lng,n.lat]);}
+function greatArc(a,b){
+  const ip=d3.geoInterpolate([byId[a].lng,byId[a].lat],[byId[b].lng,byId[b].lat]);
+  const pts=d3.range(0,1.0001,1/48).map(t=>proj(ip(t)));
+  return d3.line().curve(d3.curveBasis)(pts);
+}
+function drawNodes(){
+  const sel=gNode.selectAll('g.n').data(nodes).join(g=>{const e=g.append('g').attr('class','n');
+    e.append('circle').attr('class','node'); e.append('title'); return e;});
+  sel.attr('transform',n=>{const p=P(n.id);return `translate(${p[0]},${p[1]})`;});
+  sel.select('circle.node')
+    .attr('r',n=>n.role==='operator'?6:3.5)
+    .attr('fill',n=>C[n.live]||C.agent)
+    .style('filter',n=>n.live==='healthy'&&n.role==='operator'
+      ?'drop-shadow(0 0 6px '+C.green+')':n.live==='degraded'?'drop-shadow(0 0 6px '+C.amber+')':'none');
+  sel.select('title').text(n=>`${n.id} · ${n.region} · ${n.live}${n.leader?' · leader':''}`);
+}
+function play(i){
+  const s=scenarios[i%scenarios.length];
+  gArc.selectAll('path').data(s.arcs).join('path').attr('class','arc')
+    .attr('d',a=>greatArc(a[0],a[1])).attr('stroke',a=>a[2]);
+  const rc=s.anchor?C.green:C.cyan;
+  gPulse.selectAll('circle').data(s.ring||[]).join('circle').attr('class','pulse')
+    .attr('cx',id=>P(id)[0]).attr('cy',id=>P(id)[1]).attr('stroke',rc).attr('stroke-width',2)
+    .style('animation-delay',(d,k)=>(k*0.18)+'s');
+  document.getElementById('scNow').textContent=s.now;
+  document.getElementById('scSub').textContent=s.sub;
+}
+function boot(world){
+  layout();
+  gMap.append('path').attr('class','land')
+    .attr('d',path(topojson.feature(world,world.objects.countries)));
+  drawNodes(); let i=0; play(i); setInterval(()=>play(++i),3600);
+}
+d3.json('https://unpkg.com/world-atlas@2/countries-110m.json').then(boot);
+addEventListener('resize',()=>{d3.json('https://unpkg.com/world-atlas@2/countries-110m.json').then(boot)});
+</script>
+</body>
+</html>

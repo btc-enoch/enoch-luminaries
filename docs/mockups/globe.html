@@ -1,0 +1,193 @@
+<!doctype html>
+<!--
+  enoch-luminaries — "the Orrery": GLOBE mockup (option A)
+  Static design mock. Not wired to real data — the federation, metrics and
+  message arcs are illustrative of the Phase-2 geo-distributed testnet.
+  Stack shown: react-globe.gl (Three.js/WebGL) is what we'd use; here we use
+  the same underlying globe.gl UMD build directly, no framework, for a preview.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>the Orrery — globe</title>
+<script src="https://unpkg.com/globe.gl"></script>
+<style>
+  :root{
+    --bg:#05080f; --panel:rgba(12,18,30,.72); --line:rgba(90,130,180,.22);
+    --txt:#cfe0f5; --muted:#7e93ad; --cyan:#35d2e0; --amber:#f2b34b;
+    --violet:#a583ff; --green:#54d98c; --red:#ff5c6c;
+    --font:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;
+    font-family:var(--font);color:var(--txt)}
+  #globe{position:absolute;inset:0}
+  .overlay{position:absolute;inset:0;pointer-events:none}
+  .chip{background:var(--panel);border:1px solid var(--line);border-radius:10px;
+    backdrop-filter:blur(8px);padding:10px 14px}
+  /* top bar */
+  .topbar{position:absolute;top:16px;left:16px;right:16px;display:flex;
+    justify-content:space-between;align-items:center;gap:12px}
+  .brand{font-weight:600;letter-spacing:.5px}
+  .brand .dim{color:var(--muted);font-weight:400}
+  .metrics{display:flex;gap:22px;font-size:12.5px}
+  .metrics b{color:#fff;font-weight:600}
+  .metrics .k{color:var(--muted);margin-right:6px}
+  .live{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted)}
+  .live .dot{width:8px;height:8px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 10px var(--green);animation:blink 1.6s infinite}
+  @keyframes blink{50%{opacity:.35}}
+  /* inspector */
+  .inspector{position:absolute;top:74px;right:16px;width:248px;font-size:12px}
+  .inspector h3{margin:0 0 8px;font-size:12px;letter-spacing:.4px;color:#fff}
+  .inspector .row{display:flex;justify-content:space-between;margin:5px 0;
+    color:var(--muted)}
+  .inspector .row span{color:var(--txt)}
+  .tag{display:inline-block;padding:1px 7px;border-radius:6px;font-size:10.5px;
+    border:1px solid var(--line)}
+  .tag.leader{color:#06121a;background:var(--cyan);border-color:var(--cyan)}
+  .tag.healthy{color:var(--green);border-color:rgba(84,217,140,.4)}
+  /* legend + scenario */
+  .legend{position:absolute;left:16px;bottom:16px;font-size:11.5px;line-height:1.9}
+  .legend .grp{margin-bottom:8px}
+  .legend .ttl{color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+    font-size:9.5px;margin-bottom:3px}
+  .legend i{display:inline-block;width:20px;height:0;border-top:2px solid;
+    margin-right:8px;vertical-align:middle}
+  .legend .d{display:inline-block;width:9px;height:9px;border-radius:50%;
+    margin-right:8px;vertical-align:middle}
+  .scenario{position:absolute;right:16px;bottom:16px;text-align:right;font-size:12px}
+  .scenario .now{color:#fff;font-size:13px}
+  .scenario .sub{color:var(--muted);font-size:11px;margin-top:3px}
+  .tiertog{position:absolute;left:50%;transform:translateX(-50%);bottom:16px;
+    display:flex;gap:0;pointer-events:auto;font-size:11px}
+  .tiertog button{font-family:var(--font);background:var(--panel);color:var(--muted);
+    border:1px solid var(--line);padding:6px 12px;cursor:pointer}
+  .tiertog button:first-child{border-radius:8px 0 0 8px}
+  .tiertog button:last-child{border-radius:0 8px 8px 0;border-left:0}
+  .tiertog button.on{color:#06121a;background:var(--cyan);border-color:var(--cyan)}
+</style>
+</head>
+<body>
+<div id="globe"></div>
+<div class="overlay">
+  <div class="topbar">
+    <div class="brand chip">enoch&middot;luminaries <span class="dim">&nbsp;the Orrery</span></div>
+    <div class="metrics chip">
+      <div><span class="k">height</span><b>142,338</b></div>
+      <div><span class="k">leader</span><b>operator-2</b></div>
+      <div><span class="k">sealing</span><b>4/5</b></div>
+      <div><span class="k">anchor</span><b>2 blk ago</b></div>
+    </div>
+    <div class="live chip"><span class="dot"></span>live &middot; regtest&rarr;multi-region</div>
+  </div>
+
+  <div class="inspector chip">
+    <h3>operator-2 <span class="tag leader">LEADER</span></h3>
+    <div class="row">region <span>eu-central-1 · Frankfurt</span></div>
+    <div class="row">health <span class="tag healthy">healthy</span></div>
+    <div class="row">height <span>142,338</span></div>
+    <div class="row">bond <span>0.10000000 BTC</span></div>
+    <div class="row">last seal <span>1.2s ago</span></div>
+  </div>
+
+  <div class="legend chip">
+    <div class="grp"><div class="ttl">nodes</div>
+      <div><span class="d" style="background:var(--green);box-shadow:0 0 8px var(--green)"></span>operator · healthy</div>
+      <div><span class="d" style="background:var(--amber)"></span>operator · degraded</div>
+      <div><span class="d" style="background:var(--muted);width:7px;height:7px"></span>agent</div>
+    </div>
+    <div class="grp"><div class="ttl">messages</div>
+      <div><i style="border-color:var(--cyan)"></i>state-root sig</div>
+      <div><i style="border-color:var(--amber)"></i>FROST round</div>
+      <div><i style="border-color:var(--violet)"></i>deposit gossip</div>
+      <div><i style="border-color:var(--green)"></i>anchor → L1</div>
+    </div>
+  </div>
+
+  <div class="tiertog">
+    <button class="on">Layer 1+2</button><button>+ flows</button>
+  </div>
+
+  <div class="scenario chip">
+    <div class="now" id="scNow">state-root seal · height 142,338</div>
+    <div class="sub" id="scSub">leader operator-2 → 4 peers · M-of-N quorum</div>
+  </div>
+</div>
+
+<script>
+const C = {cyan:'#35d2e0',amber:'#f2b34b',violet:'#a583ff',green:'#54d98c',
+           healthy:'#54d98c',degraded:'#f2b34b',agent:'#9fb4cc'};
+
+// Illustrative geo-distributed federation (Phase-2 vision: 5 regions).
+const nodes = [
+  {id:'operator-0',role:'operator',region:'us-east-1',lat:38.95,lng:-77.45,live:'healthy'},
+  {id:'operator-1',role:'operator',region:'us-west-2',lat:45.87,lng:-119.69,live:'healthy'},
+  {id:'operator-2',role:'operator',region:'eu-central-1',lat:50.11,lng:8.68,live:'healthy',leader:true},
+  {id:'operator-3',role:'operator',region:'ap-southeast-1',lat:1.35,lng:103.82,live:'degraded'},
+  {id:'operator-4',role:'operator',region:'sa-east-1',lat:-23.55,lng:-46.63,live:'healthy'},
+  {id:'agent-0',role:'agent',region:'us-east-1',lat:39.6,lng:-75.9,live:'healthy'},
+  {id:'agent-1',role:'agent',region:'eu-central-1',lat:48.4,lng:11.2,live:'healthy'},
+  {id:'agent-2',role:'agent',region:'ap-southeast-1',lat:3.1,lng:101.6,live:'healthy'},
+];
+const byId = Object.fromEntries(nodes.map(n=>[n.id,n]));
+const arc = (a,b,color)=>({...{},startLat:byId[a].lat,startLng:byId[a].lng,
+  endLat:byId[b].lat,endLng:byId[b].lng,color});
+
+// Cycling scenarios — each is a "moment" of federation activity.
+const ops=['operator-0','operator-1','operator-3','operator-4'];
+const scenarios = [
+  {now:'state-root seal · height 142,338', sub:'leader operator-2 → 4 peers · M-of-N quorum',
+   ring:['operator-2',...ops], arcs:ops.map(o=>arc('operator-2',o,C.cyan))},
+  {now:'FROST signing round', sub:'agents ↔ operators · withdrawal batch',
+   ring:['operator-2'], arcs:[arc('agent-1','operator-2',C.amber),arc('agent-0','operator-0',C.amber),
+     arc('agent-2','operator-3',C.amber)]},
+  {now:'deposit gossip', sub:'operator-0 broadcasts a detected L1 deposit',
+   ring:['operator-0'], arcs:ops.filter(o=>o!=='operator-0').map(o=>arc('operator-0',o,C.violet))
+     .concat([arc('operator-0','operator-2',C.violet)])},
+  {now:'L1 anchor published', sub:'leader operator-2 commits state root to Bitcoin',
+   ring:['operator-2'], arcs:[], anchor:true},
+];
+
+const globe = Globe()(document.getElementById('globe'))
+  .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-dark.jpg')
+  .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
+  .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+  .showAtmosphere(true).atmosphereColor('#2f6fd0').atmosphereAltitude(0.16)
+  .pointsData(nodes)
+  .pointColor(n=>C[n.live]||C.agent)
+  .pointAltitude(n=>n.role==='operator'?0.012:0.006)
+  .pointRadius(n=>n.role==='operator'?0.55:0.32)
+  .pointLabel(n=>`<div style="font:12px monospace;color:#cfe0f5;background:rgba(8,12,20,.85);
+     padding:6px 9px;border:1px solid rgba(90,130,180,.3);border-radius:7px">
+     <b>${n.id}</b> · ${n.region}<br><span style="color:#7e93ad">${n.live}${n.leader?' · leader':''}</span></div>`)
+  .labelsData(nodes.filter(n=>n.role==='operator'))
+  .labelLat('lat').labelLng('lng').labelText(n=>n.region)
+  .labelSize(0.9).labelDotRadius(0.01).labelColor(()=>'rgba(180,205,235,.55)')
+  .labelResolution(2)
+  .arcColor('color').arcStroke(0.55).arcDashLength(0.45).arcDashGap(0.18)
+  .arcDashAnimateTime(1700).arcsTransitionDuration(400)
+  .ringColor(()=>(t=>`rgba(53,210,224,${1-t})`))
+  .ringMaxRadius(4.5).ringPropagationSpeed(2.2).ringRepeatPeriod(950);
+
+globe.pointOfView({lat:24,lng:-22,altitude:2.3},0);
+const ctrl = globe.controls(); ctrl.autoRotate=true; ctrl.autoRotateSpeed=0.55;
+ctrl.enableZoom=true;
+
+let i=0;
+function play(){
+  const s=scenarios[i%scenarios.length];
+  globe.arcsData(s.arcs);
+  const rings=(s.ring||[]).map(id=>({lat:byId[id].lat,lng:byId[id].lng}));
+  globe.ringsData(rings).ringColor(()=> (t=>`rgba(${s.anchor?'84,217,140':'53,210,224'},${1-t})`));
+  document.getElementById('scNow').textContent=s.now;
+  document.getElementById('scSub').textContent=s.sub;
+  i++;
+}
+play(); setInterval(play,3600);
+addEventListener('resize',()=>{globe.width(innerWidth);globe.height(innerHeight)});
+globe.width(innerWidth); globe.height(innerHeight);
+</script>
+</body>
+</html>

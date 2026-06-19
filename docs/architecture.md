@@ -99,6 +99,18 @@ node or event. Health renders as healthy / degraded / offline. The data source
 is pluggable, so the same UI renders a mainnet-safe Layer 1+2 view or the
 testnet Layer 1+2+3 demo.
 
+**Two view modes, one Orrery.** The map is a swappable render layer over shared
+state — everything else (websocket client, store, top bar, inspector, timeline,
+tier toggle) is common to both:
+
+- **Flat map** (`deck.gl` ArcLayer + dark basemap) — the default daily driver:
+  all regions legible at once, "mission-control" feel.
+- **Globe** (`react-globe.gl`, Three.js) — the reveal: cinematic, planetary,
+  makes geo-distribution visceral.
+
+Both consume the identical collector feed; switching is a one-click toggle. Design
+references live in [mockups/](mockups/) (`flat-map.html`, `globe.html`).
+
 ## Deployment (`deploy/`) — Phase 2
 
 Terraform for one EC2 instance per AWS region, each running the existing
