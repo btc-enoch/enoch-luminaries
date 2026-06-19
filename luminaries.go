@@ -1,11 +1,17 @@
-// Package model holds the domain types the Orrery renders.
+// Package luminaries is the domain core of enoch-luminaries: the types
+// and interfaces describing the Enoch federation as the Orrery observes
+// it. It is the root package and depends on no other package in this
+// module — implementations under internal/ depend on it, never the
+// reverse (standard Go package layout: the domain is the stable center).
 //
-// Vocabulary policy (docs/naming.md): these types mirror /enoch's own
-// names exactly — operator, agent, state-root signature, anchor, FROST
-// round — so what shows on the map maps one-to-one onto the protocol
-// spec, logs and code. The only invented names here are pure-viz
-// concepts /enoch does not name (health states, the "message" arc).
-package model
+// Vocabulary policy (docs/naming.md): these names mirror /enoch's own —
+// operator, agent, state-root signature, anchor, FROST round — so the
+// map maps one-to-one onto the protocol spec, logs and code. The only
+// invented names are pure-viz concepts /enoch does not name (health
+// states, the "message" arc).
+package luminaries
+
+import "context"
 
 // Role distinguishes the two federation node types. Both are real
 // /enoch entities; the Orrery places and styles them differently.
@@ -92,4 +98,31 @@ type Aggregate struct {
 	BucketUnixNs int64  `json:"bucket_unix_ns"`
 	Kind         string `json:"kind"` // "tx" | "deposit" | "withdrawal"
 	Count        int    `json:"count"`
+}
+
+// Event is one observation flowing from a Source into the stream.
+// Exactly one pointer field is set.
+type Event struct {
+	Node      *Node      `json:"node,omitempty"`
+	Message   *Message   `json:"message,omitempty"`
+	StateRoot *StateRoot `json:"state_root,omitempty"`
+	Anchor    *Anchor    `json:"anchor,omitempty"`
+	Aggregate *Aggregate `json:"aggregate,omitempty"`
+}
+
+// Source emits observations of the federation. It is read-only with
+// respect to the federation and lives outside its trust boundary.
+// Implementations:
+//   - internal/source/public — Layer 1+2 (liveness + aggregates), mainnet-safe
+//   - internal/source/flows  — Layer 3 (reconstructed flows), testnet-only
+//
+// The interface lives in the domain package (not the consumer) because
+// both the stream and the cmd wiring reference it; implementations
+// import this package, keeping the dependency direction one-way.
+type Source interface {
+	// Name identifies the source in logs.
+	Name() string
+	// Run streams observations to out until ctx is cancelled. Sends must
+	// not block on the federation; drop rather than stall.
+	Run(ctx context.Context, out chan<- Event) error
 }

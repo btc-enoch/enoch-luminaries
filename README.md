@@ -49,18 +49,22 @@ Poetic on the outside, protocol-faithful on the inside
 ## Layout
 
 ```
+luminaries.go         domain core — protocol-faithful types + the Source interface (root package)
 cmd/collector/        the collector binary — watches the federation, serves the Orrery
 internal/
-  federation/         read federation_manifest.json → topology + geo placement
-  sources/
+  manifest/           read federation_manifest.json → topology + geo placement
+  source/
     public/           Layer 1+2: /info, /state_roots/latest, /events, Bitcoin L1
     flows/            Layer 3 bolt-on: reconstruct message choreography from /events
-  model/              protocol-faithful domain types (Operator, Agent, Message, ...)
   stream/             merge sources → timeline, serve websocket to the Orrery
 web/                  the Orrery — geographic world-map frontend
 deploy/               Terraform for the AWS geo-distributed testnet (Phase 2)
 docs/                 architecture, observability tiers, naming, roadmap
 ```
+
+Dependency direction is one-way: `internal/*` → root `luminaries`, and
+`cmd/collector` wires the concrete implementations. The domain package imports
+nothing from the module — the stable center.
 
 ## Quickstart
 

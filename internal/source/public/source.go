@@ -1,6 +1,7 @@
 // Package public is the Layer 1+2 source: it reads only the
 // federation's existing public surface and emits protocol-faithful
-// model objects. It is mainnet-safe and makes zero /enoch changes.
+// luminaries.Event values. It is mainnet-safe and makes zero /enoch
+// changes. It implements luminaries.Source.
 //
 // Layer 1 (liveness): GET /info + /health per operator; current leader
 // derived as (height+view) mod N from the manifest; state-root seals
@@ -17,4 +18,4 @@ package public
 
 // TODO(phase1): implement the poller (/info,/health,/state_roots/latest),
 // the SSE subscriber (/events), and the L1 anchor watcher; emit
-// model.Node / model.StateRoot / model.Anchor / model.Aggregate updates.
+// luminaries.Event with Node / StateRoot / Anchor / Aggregate set.

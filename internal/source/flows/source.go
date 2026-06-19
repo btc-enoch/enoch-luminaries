@@ -1,7 +1,7 @@
 // Package flows is the Layer 3 demo bolt-on: it reconstructs the
 // implied inter-node message choreography from real public /events plus
-// the known protocol state machine, and emits model.Message arcs with
-// Tier 3.
+// the known protocol state machine, and emits luminaries.Message arcs
+// with Tier 3. It implements luminaries.Source.
 //
 // It is a dramatization driven by public events, NOT a packet tap: it
 // observes no raw RPCs, sig shares, nonces, amounts or tx bodies, adds
@@ -15,6 +15,6 @@
 // See docs/observability-tiers.md.
 package flows
 
-// TODO(phase1b): subscribe to the same /events stream as sources/public
+// TODO(phase1b): subscribe to the same /events stream as source/public
 // and, per lifecycle event, synthesize the protocol-accurate sequence
-// of model.Message{Tier: 3} arcs the event implies.
+// of luminaries.Message{Tier: 3} arcs the event implies.

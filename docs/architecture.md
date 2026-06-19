@@ -31,11 +31,11 @@ describes the data flow, the collector, the source adapters, and the layout.
                          └──────────────┬──────────────────────────────┬────────────────────────────┘
                                         │ poll + subscribe (read-only)  │
                             ┌───────────▼───────────┐      ┌────────────▼───────────┐
-                            │ sources/public        │      │ sources/flows          │
+                            │ source/public         │      │ source/flows           │
                             │  Layer 1 — liveness    │      │  Layer 3 — reconstructed│
                             │  Layer 2 — aggregates  │      │  message choreography  │
                             └───────────┬───────────┘      └────────────┬───────────┘
-                                        │   model.* (protocol-faithful) │
+                                        │  luminaries.Event (one-way)   │
                                         └───────────────┬───────────────┘
                                                 ┌───────▼────────┐
                                                 │ internal/stream │  merge → timeline
@@ -63,9 +63,9 @@ the already-public data it reads.
 
 ## Sources
 
-### `sources/public` — Layer 1 + 2 (mainnet-safe, zero protocol code)
+### `source/public` — Layer 1 + 2 (mainnet-safe, zero protocol code)
 
-Reads existing public surface and emits protocol-faithful model objects:
+Reads existing public surface and emits protocol-faithful `luminaries.Event`s:
 
 | Signal | Source | Emits |
 |--------|--------|-------|
@@ -78,7 +78,7 @@ Reads existing public surface and emits protocol-faithful model objects:
 
 No per-user data leaves this layer except as binned aggregates.
 
-### `sources/flows` — Layer 3 (testnet demo bolt-on)
+### `source/flows` — Layer 3 (testnet demo bolt-on)
 
 Reconstructs the *implied* inter-node choreography from public lifecycle events
 plus the known protocol state machine. When `/events` reports a `deposit_minted`
